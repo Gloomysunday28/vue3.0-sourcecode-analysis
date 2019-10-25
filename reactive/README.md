@@ -339,6 +339,50 @@ effectsToAdd就是track函数里添加的对象属性的值 new Set, 用于收�
 ```
 这里我们看见了Vue对effect进行了两种情况的判断, 首先判断了effect.scheduler是否存在, 若存在则使用scheduler来调用effect, 不存在则进行直接调用, 那么scheduler到底是什么呢？ 这里的scheduler就是Vue的性能优化点，放入队里里, 等到miscroTask里进行调用, 熟悉Vue2.x的同学都知道nextTick函数, 这个scheduler可以看做就是调用了nextTick函数
 
+我们来看下effect具体是什么
+```javascript
+  const effect: ReactiveEffect = function effect(...args: any[]): any {
+    return run(effect as ReactiveEffect, fn, args)
+  }
+
+  function run(effect: ReactiveEffect, fn: Function, args: any[]): any {
+    if (!effect.active) {
+      return fn(...args)
+    }
+
+    if (activeReactiveEffectStack.indexOf(effect) === -1) {
+      cleanup(effect)
+      // 初始化mount的时候会执行effect函数， 当前effect是componentEffect, 也就是渲染函数, 此时由于去获取了变量数据，也就是触发了get函数，get函数会触发track函数, track函数就是用来收集effect, 
+      try {
+        activeReactiveEffectStack.push(effect)
+        return fn(...args)
+      } finally {
+        activeReactiveEffectStack.pop()
+      }
+    }
+  }
+```
+effect实际上就是运行了run函数, 我们看下run函数的运行, 在运行之前会先cleanup, 这里我们就要返回之前所说的track函数, 大家还记得track函数里, 不只dep添加了effect, effect也同时添加了dep吗? 原因就在这里, cleanup需要用到
+```javascript
+  function cleanup(effect: ReactiveEffect) {
+    const { deps } = effect
+    // console.log('deps', deps);
+    if (deps.length) {
+      for (let i = 0; i < deps.length; i++) {
+        deps[i].delete(effect)
+      }
+      deps.length = 0
+    }
+  }
+```
+该函数清空了dep里所有的依赖, 那么胆大心细的同学会发现一个问题:
+
+  在track函数里已经添加了effect, 那么为什么在这里要重新清除掉所有的依赖呢?
+
+  理论上看起来是个很鸡肋的操作, 但是实际上Vue已经考虑了全方面, 试想一个场景:
+  A组件与B组件是通过v-if来控制展示, 当A组件首先渲染之后, 所对应的的数据就会采集对应的依赖, 此时更改v-if条件, 渲染了B组件, 若是B组件此时更改了A组件里的变量, 若是A组件的依赖没有被清除掉, 那么会产生不必要的依赖调用, 所以Vue要事先清除掉所有的依赖, 确保依赖始终是最新的
+
+
 分析到这我们已经清楚了Vue3.0的数据响应究竟是如何了！
 
 # 总结
