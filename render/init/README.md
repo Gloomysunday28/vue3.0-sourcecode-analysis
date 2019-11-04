@@ -228,7 +228,7 @@ createRenderer函数定义了多个对于渲染有作用的函数，我们来剖
     }
   }
 ```
-首先将组件实例进行代理对象处理,赋值给实例下的renderProxy, 接下来对setup进行判断用户是否定义了setup, **注意这里, 我们可以看见源码并没有对setup类型进行判断**, 但是vue会把它默认当做是函数来使用, 所以这里我们必须设定为函数, **不然代码会报错, 但是不影响渲染**,  我们根据大部分场景setup返回的是一个函数或者是响应数据来走, 此时我们会执行==handleSetupResult==
+首先将组件实例进行代理对象处理,赋值给实例下的renderProxy, 接下来对setup进行判断用户是否定义了setup, **注意这里, 我们可以看见源码并没有对setup类型进行判断**, 但是vue会把它默认当做是函数来使用, 所以这里我们必须设定为函数, **不然代码会报错, 但是不影响渲染**,  我们根据大部分场景setup返回的是一个函数或者是响应数据来走, 此时我们会执行<font color=#00ffff>handleSetupResult</font>
 ```javascript
   function handleSetupResult(
     instance: ComponentInternalInstance,
@@ -260,7 +260,9 @@ createRenderer函数定义了多个对于渲染有作用的函数，我们来剖
     finishComponentSetup(instance, parentSuspense)
   }
 ```
-Vue首先判断setup返回的是否是一个函数，如果是的话那么将组件实例下的render函数赋值成该函数， 若不是，Vue会再判断是否是一个对象，该对象不能是虚拟DOM, 但是不会阻止渲染，最后将该对象进行响应处理并且赋值给组件实例下的==renderContext==, 这个renderContext是一个挺重要的变量，后面会讲到， 最后再执行==finishComponentSetup==
+Vue首先判断setup返回的是否是一个函数，如果是的话那么将组件实例下的render函数赋值成该函数， 若不是，Vue会再判断是否是一个对象，该对象不能是虚拟DOM, 但是不会阻止渲染，最后将该对象进行响应处理并且赋值给组件实例下的<font color=#00ffff>renderContext</font>, 这个renderContext是一个挺重要的变量，后面会讲到， 最后再执行
+<font color=red>finishComponentSetup</font>
+
 ```javascript
   finishComponentSetup(
     instance: ComponentInternalInstance,
@@ -304,6 +306,7 @@ Vue首先判断setup返回的是否是一个函数，如果是的话那么将组
       instance.renderContext = reactive({})
     }
 }
+
 ```
 我们可以看到初始化渲染时, 组件实例是不具备render函数， 这里会判断用户定义的组件配置是否具有template同时不具备render函数, 满足条件后Vue会对**template进行解析成AST树, 转换代码并且生成代码, 最后会形成**
 ```javascript
@@ -313,7 +316,8 @@ Vue首先判断setup返回的是否是一个函数，如果是的话那么将组
     }
   }
 ```
-最后组件实例下的render函数会被赋值成解析出来的render函数或者是空函数, 接着Vue3.0会去兼容2.x的写法, 调用了==applyOptions==方法
+最后组件实例下的render函数会被赋值成解析出来的render函数或者是空函数, 接着Vue3.0会去兼容2.x的写法, 调用了<font color=red>applyOptions</font>方法
+
 ```javascript
   function applyOptions(
     instance: ComponentInternalInstance,
