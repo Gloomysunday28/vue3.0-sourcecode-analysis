@@ -1,6 +1,3 @@
-<table><tr><td color=yellow>背景色yellow</td></tr></table>
-
-
 # Vue初始化渲染
 
 ## 源码导读
