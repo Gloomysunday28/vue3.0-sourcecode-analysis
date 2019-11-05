@@ -7,7 +7,7 @@
   2. src/packages/runtime-core 渲染核心代码
   3. src/packages/compiler-core 编译模板
 
-## 走进代码， 体验全所未有的舒适！
+## 走进代码， 体验前所未有的舒适！
 ### 入口
 ```javascript
   // src/packages/vue/src/index.ts
@@ -384,3 +384,51 @@ Vue首先判断setup返回的是否是一个函数，如果是的话那么将组
 接下来进行资源合并处理（data, computed, methods, inject）, 这里我们就说到刚才说到的重要变量renderContext, **它不只存放了setup返回的, 并且存储了data, methods, inject里的变量**, 
 
 setupStatefulComponent至此讲完了
+
+### 返回mountComponent函数
+```javascript
+  function mountComponent() {
+    ...
+    setupRenderEffect(
+      instance,
+      parentSuspense,
+      initialVNode,
+      container,
+      anchor,
+      isSVG
+    )
+  }
+
+  function setupRenderEffect(
+    instance: ComponentInternalInstance,
+    parentSuspense: HostSuspenseBoundary | null,
+    initialVNode: HostVNode,
+    container: HostElement,
+    anchor: HostNode | null,
+    isSVG: boolean
+  ) {
+    // create reactive effect for rendering
+    let mounted = false
+    instance.update = effect(function componentEffect() {
+      if (!mounted) {
+        const subTree = (instance.subTree = renderComponentRoot(instance))
+        // beforeMount hook
+        if (instance.bm !== null) {
+          invokeHooks(instance.bm)
+        }
+        patch(null, subTree, container, anchor, instance, parentSuspense, isSVG)
+        initialVNode.el = subTree.el
+        // mounted hook
+        if (instance.m !== null) {
+          queuePostRenderEffect(instance.m, parentSuspense)
+        }
+        mounted = true
+      } else {
+        // updateComponent
+        // This is triggered by mutation of component's own state (next: null)
+        ...
+      }
+    }, __DEV__ ? createDevEffectOptions(instance) : prodEffectOptions)
+  }
+```
+mountComponent执行完setupStatefulComponent后还会执行setupRenderEffect函数， 我们来看下该函数的作用, 首先定义了一个变量mounted并且初始化为false, 其次定义了组件实例下的update方法，这里使用到了effect，也就是数据响应里讲到的依赖, 如果不是Computed，effect的第一个参数函数会被执行一次，此时会判断是否已经挂载了， 若没有， 则调用beforeMount与mounted声明周期，**由于生命周期可以是数组形式，所以Vue内部会以数组形式来进行调用**, <code>不知道大家有没有使用过onMounted与onBeforeMount方法，不管两个谁定义在前，都是按照bm -> m</code>, 这里其实也解释了为什么是这么调用的
