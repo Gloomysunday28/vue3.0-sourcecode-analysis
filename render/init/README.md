@@ -1,4 +1,6 @@
-<table><tr><td bgcolor=yellow>背景色yellow</td></tr></table>
+<font color=red>3213</font>
+
+
 # Vue初始化渲染
 
 ## 源码导读
@@ -433,5 +435,3 @@ setupStatefulComponent至此讲完了
   }
 ```
 mountComponent执行完setupStatefulComponent后还会执行setupRenderEffect函数， 我们来看下该函数的作用, 首先定义了一个变量mounted并且初始化为false, 其次定义了组件实例下的update方法，这里使用到了effect，也就是数据响应里讲到的依赖, 如果不是Computed，effect的第一个参数函数会被执行一次，此时会判断是否已经挂载了， 若没有， 则调用beforeMount与mounted声明周期，**由于生命周期可以是数组形式，所以Vue内部会以数组形式来进行调用**, <code>不知道大家有没有使用过onMounted与onBeforeMount方法，不管两个谁定义在前，都是按照bm -> m</code>, 这里其实也解释了为什么是这么调用的
-
-<table><tr><td bgcolor=yellow>背景色yellow</td></tr></table>
